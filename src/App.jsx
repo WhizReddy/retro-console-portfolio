@@ -22,6 +22,7 @@ import ScrollIntroManager from "../components/ScrollIntroManager";
 import IntroOverlay from "../components/IntroOverlay";
 import MonitorGuidance from "../components/MonitorGuidance";
 import ScrollProgressIndicator from "../components/ScrollProgressIndicator";
+import SnakeGame from "./SnakeGame";
 
 /* ─────────── Camera spring ─────────── */
 function CameraSpring({ stage }) {
@@ -130,6 +131,8 @@ export default function App() {
   const [showSubtleWarning, setShowSubtleWarning] = useState(false);
   const [showIntroOverlay, setShowIntroOverlay] = useState(false);
   const [showMonitorGuidance, setShowMonitorGuidance] = useState(false);
+  const [showSnakeGame, setShowSnakeGame] = useState(false);
+  const [gameCompleted, setGameCompleted] = useState(false);
   const [lock, setLock] = useState(false);
   const roomRef = useRef();
 
@@ -359,7 +362,12 @@ export default function App() {
         flashy={true}
       />
 
-      <MonitorGuidance visible={showMonitorGuidance} />
+      <MonitorGuidance 
+        visible={showMonitorGuidance && !gameCompleted} 
+        onPlayClick={() => setShowSnakeGame(true)}
+        showPlayButton={true}
+        position="monitor-screen"
+      />
 
       {/* Progress indicator */}
       <ScrollProgressIndicator
@@ -367,6 +375,17 @@ export default function App() {
         totalStages={4}
         stageNames={["Start", "Warning", "Intro", "Monitor"]}
       />
+
+      {/* Snake Game */}
+      {showSnakeGame && (
+        <SnakeGame
+          onComplete={() => {
+            setGameCompleted(true);
+            setShowSnakeGame(false);
+          }}
+          onClose={() => setShowSnakeGame(false)}
+        />
+      )}
 
       {/* CSS for animations */}
       <style>{`

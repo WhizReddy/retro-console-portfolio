@@ -4,6 +4,8 @@ const MonitorGuidance = React.memo(function MonitorGuidance({
   visible,
   message = "👆 Focus on the monitor area to explore my work!",
   position = "bottom-center",
+  onPlayClick,
+  showPlayButton = false,
 }) {
   const [animationState, setAnimationState] = useState("hidden");
 
@@ -39,6 +41,12 @@ const MonitorGuidance = React.memo(function MonitorGuidance({
           left: "50%",
           transform: `translate(-50%, -50%) scale(${scale})`,
         };
+      case "monitor-screen":
+        return {
+          top: "45%",
+          left: "60%", // Positioned to the right like it's on the monitor
+          transform: `translate(-50%, -50%) scale(${scale})`,
+        };
       default:
         return {
           bottom: "80px",
@@ -72,6 +80,39 @@ const MonitorGuidance = React.memo(function MonitorGuidance({
         }}
       >
         {message}
+
+        {/* Play Button */}
+        {showPlayButton && (
+          <button
+            onClick={onPlayClick}
+            style={{
+              marginTop: "2rem",
+              background: "#000",
+              color: "#0f0",
+              border: "2px solid #0f0",
+              padding: "0.8rem 1.5rem",
+              borderRadius: "8px",
+              fontSize: "1rem",
+              fontWeight: "bold",
+              cursor: "pointer",
+              fontFamily: "monospace",
+              boxShadow: "0 0 10px rgba(0, 255, 0, 0.3)",
+              transition: "all 0.2s",
+            }}
+            onMouseOver={(e) => {
+              e.target.style.background = "#0f0";
+              e.target.style.color = "#000";
+              e.target.style.boxShadow = "0 0 15px rgba(0, 255, 0, 0.6)";
+            }}
+            onMouseOut={(e) => {
+              e.target.style.background = "#000";
+              e.target.style.color = "#0f0";
+              e.target.style.boxShadow = "0 0 10px rgba(0, 255, 0, 0.3)";
+            }}
+          >
+            🐍 PLAY SNAKE
+          </button>
+        )}
 
         {/* Animated arrow pointing up */}
         <div
