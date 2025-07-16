@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
+import audioManager from './AudioManager';
 
 const GRID_SIZE = 20;
 const CANVAS_SIZE = 400; // Back to square dimensions
@@ -50,8 +51,10 @@ export default function SnakeGame({ onComplete, onClose }) {
 
       // Check food collision
       if (head.x === food.x && head.y === food.y) {
+        audioManager.playSound('snakeEat'); // Play apple eating sound
         setFood(generateFood(newSnake));
         setGameWon(true);
+        audioManager.playSound('snakeWin'); // Play victory sound
         setTimeout(() => onComplete(), 1000); // Complete after 1 second
         return newSnake; // Don't remove tail (snake grows)
       }
@@ -222,7 +225,6 @@ export default function SnakeGame({ onComplete, onClose }) {
               </p>
             </div>
             <button
-              onClick={startGame}
               style={{
                 background: 'linear-gradient(45deg, #0f0, #0a0)',
                 color: '#000',
@@ -239,6 +241,7 @@ export default function SnakeGame({ onComplete, onClose }) {
                 letterSpacing: '2px',
               }}
               onMouseOver={(e) => {
+                audioManager.playSound('hover'); // Play hover sound
                 e.target.style.background = 'linear-gradient(45deg, #0a0, #080)';
                 e.target.style.boxShadow = '0 0 30px rgba(0, 255, 0, 0.8), inset 0 0 30px rgba(255, 255, 255, 0.2)';
                 e.target.style.transform = 'scale(1.05)';
@@ -247,6 +250,10 @@ export default function SnakeGame({ onComplete, onClose }) {
                 e.target.style.background = 'linear-gradient(45deg, #0f0, #0a0)';
                 e.target.style.boxShadow = '0 0 20px rgba(0, 255, 0, 0.5), inset 0 0 20px rgba(255, 255, 255, 0.1)';
                 e.target.style.transform = 'scale(1)';
+              }}
+              onClick={() => {
+                audioManager.playSound('click'); // Play click sound
+                startGame();
               }}
             >
               ▶ START GAME

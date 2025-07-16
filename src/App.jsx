@@ -24,6 +24,7 @@ import MonitorGuidance from "../components/MonitorGuidance";
 import ScrollProgressIndicator from "../components/ScrollProgressIndicator";
 import SnakeGame from "./SnakeGame";
 import RetroMenu from "./RetroMenu";
+import audioManager from "./AudioManager";
 
 /* ─────────── Camera spring ─────────── */
 function CameraSpring({ stage }) {
@@ -31,7 +32,7 @@ function CameraSpring({ stage }) {
   const { pos, tgt } = useSpring({
     pos:
       stage === 0
-        ? [-9.1, 8.35, 9.53] // intro - wide view of studio
+        ? [-9.1, 8.55, 9.53] // intro - wide view of studio
         : stage === 1
         ? [1.0, 5.0, 2.5] // slightly closer, but stay high
         : stage === 2
@@ -39,7 +40,7 @@ function CameraSpring({ stage }) {
         : [2.5, 8.5, -1.5], // stay focused on monitor
     tgt:
       stage === 0
-        ? [2, 3.0, -0.5] // looking at center of studio
+        ? [2, 4.0, -2.5] // looking at center of studio
         : stage === 1
         ? [2.0, 5.0, -5.0] // looking at studio center
         : stage === 2
@@ -147,6 +148,24 @@ export default function App() {
     return () => document.head.removeChild(css);
   }, []);
 
+  /* Initialize audio system */
+  useEffect(() => {
+    // Start background music after user interaction
+    const startAudio = () => {
+      audioManager.startBackgroundMusic();
+      document.removeEventListener('click', startAudio);
+      document.removeEventListener('keydown', startAudio);
+    };
+    
+    document.addEventListener('click', startAudio);
+    document.addEventListener('keydown', startAudio);
+    
+    return () => {
+      document.removeEventListener('click', startAudio);
+      document.removeEventListener('keydown', startAudio);
+    };
+  }, []);
+
   /* Handle wheel events for stage progression */
   useEffect(() => {
     let wheelAccumulator = 0;
@@ -160,11 +179,19 @@ export default function App() {
 
       // Stage progression based on wheel accumulation
       if (wheelAccumulator > wheelThreshold && stage < 3) {
-        setStage(stage + 1);
-        wheelAccumulator = (stage + 1) * wheelThreshold; // Set to current stage level
+        const newStage = stage + 1;
+        setStage(newStage);
+        wheelAccumulator = newStage * wheelThreshold; // Set to current stage level
+        
+        // Play scroll transition sound
+        audioManager.playSound('scroll');
       } else if (wheelAccumulator < 0 && stage > 0) {
-        setStage(stage - 1);
-        wheelAccumulator = (stage - 1) * wheelThreshold; // Set to current stage level
+        const newStage = stage - 1;
+        setStage(newStage);
+        wheelAccumulator = newStage * wheelThreshold; // Set to current stage level
+        
+        // Play scroll transition sound
+        audioManager.playSound('scroll');
       }
     };
 
@@ -178,6 +205,7 @@ export default function App() {
     if (stage === 1 && !showSubtleWarning) {
       const timer = setTimeout(() => {
         setShowSubtleWarning(true);
+        audioManager.playSound('warning'); // Play warning sound
       }, 400);
       return () => clearTimeout(timer);
     }
@@ -187,6 +215,7 @@ export default function App() {
       setShowSubtleWarning(false);
       const timer = setTimeout(() => {
         setShowIntroOverlay(true);
+        audioManager.playSound('intro'); // Play fanfare sound
       }, 600);
       return () => clearTimeout(timer);
     }
@@ -400,7 +429,6 @@ export default function App() {
       {/* Play button on monitor screen */}
       {showMonitorGuidance && !gameCompleted && (
         <button
-          onClick={() => setShowSnakeGame(true)}
           style={{
             position: "fixed",
             top: "52%", // A bit more down
@@ -420,6 +448,7 @@ export default function App() {
             transition: "all 0.2s",
           }}
           onMouseOver={(e) => {
+            audioManager.playSound('hover'); // Play hover sound
             e.target.style.background = "#0f0";
             e.target.style.color = "#000";
             e.target.style.boxShadow = "0 0 15px rgba(0, 255, 0, 0.6)";
@@ -428,6 +457,10 @@ export default function App() {
             e.target.style.background = "#000";
             e.target.style.color = "#0f0";
             e.target.style.boxShadow = "0 0 10px rgba(0, 255, 0, 0.3)";
+          }}
+          onClick={() => {
+            audioManager.playSound('click'); // Play click sound
+            setShowSnakeGame(true);
           }}
         >
           🐍 PLAY SNAKE
