@@ -23,11 +23,11 @@ import LogLights        from '../components/LogLights';
 function CameraSpring({ stage }) {
   const { camera } = useThree();
   const { pos, tgt } = useSpring({
-    pos:  stage === 0 ? [-8.8, 5.69, 9.88]  // Updated from IntroCam values
+    pos:  stage === 0 ?[-9.10, 8.35, 9.53]  // Updated from IntroCam values
          : stage === 1 ? [2.0, 5.0, 3.2]
          : stage === 2 ? [4.0, 5.0, 1.8]
          :               [1.0, 2.0, 3.0],
-    tgt:  stage === 0 ? [-1.3, 5.68, -0.78]  // Updated target from IntroCam
+    tgt:  stage === 0 ?  [ 0.53, 5.00, -0.5]  // Updated target from IntroCam
          : stage === 1 ? [2.0, 5.0, 1.0]
          : stage === 2 ? [1.1, 4.0, 0.2]
          :               [1.11, 5.0, 2.0],
@@ -150,7 +150,7 @@ export default function App() {
           toneMapping: THREE.ACESFilmicToneMapping,
           toneMappingExposure: 0.4
         }}
-        camera={{ position: [-8.8, 5.69, 9.88], fov: 60 }}  // Updated initial camera position from IntroCam
+        camera={{ position: [-9.1, 8.35, 9.53], fov: 60 }}  // Updated initial camera position from IntroCam
         style={{ width: '100vw', height: '100vh' }}
       >
         {/* ——— LIGHT RIG ——— */}
@@ -188,8 +188,8 @@ export default function App() {
 
         {/* camera & helpers */}
         <CameraSpring stage={stage}/>
-        {import.meta.env.DEV && stage===0 && (<><TweakCamera/><IntroCamHelper/></>)}
-        {import.meta.env.DEV && <LogLights />}
+        {/* {import.meta.env.DEV && stage === 0 && <IntroCamHelper />} */}
+        {/* {import.meta.env.DEV && <LogLights />} */}
 
         {/* scene */}
         <Suspense fallback={null}>
