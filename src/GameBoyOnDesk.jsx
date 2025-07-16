@@ -57,7 +57,7 @@ export default function GameBoyOnDesk({ visible, onButton }) {
   /* ---------- placement tweak here ---------- */
   return (
     <Suspense fallback={null}>
-<group position={[-2.1,1.445,0.1]}
+<group position={[0,2,0]}
   rotation={[ -Math.PI / 2, 0, 1 ]}   // ⬅ new angles
 
 scale={0.2}>

@@ -1,25 +1,37 @@
 import React, { Suspense, useEffect, useState } from 'react';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { PresentationControls, useGLTF, Environment } from '@react-three/drei';
+import { Canvas, useThree, useFrame } from '@react-three/fiber';
+import {
+  useGLTF,
+  Environment,
+  SoftShadows,
+  ContactShadows
+} from '@react-three/drei';
 import { useSpring } from '@react-spring/three';
+import * as THREE from 'three';
+window.THREE = THREE;
 import FlappyBirdCanvas from './FlappyBirdCanvas';
-import GameBoyOnDesk from './GameBoyOnDesk';
+import GameBoyOnDesk    from './GameBoyOnDesk';
+import TweakCamera      from './TweakCamera';
+import IntroCamHelper   from '../components/IntroCamHelper';
+import LogLights from '../components/LogLights';
+import { EffectComposer, Bloom, SSAO, Vignette } from '@react-three/postprocessing';
+import { KernelSize, BlendFunction } from 'postprocessing';
 
-/* ─────────────────── Camera (scroll-driven) ─────────────────── */
+
+/* ─────────── Camera spring ─────────── */
 function CameraSpring({ stage }) {
   const { camera } = useThree();
   const { pos, tgt } = useSpring({
-    pos:  stage === 0 ? [1.6, 2.2, 4.8]
-         : stage === 1 ? [2.0, 1.5, 3.2]
-         : stage === 2 ? [2.2, 1.3, 1.8]
-         :               [2.22,1.27,1.6],
-    tgt:  stage === 0 ? [0.8, 1.1, 0.0]
-         : stage === 1 ? [1.0, 0.5, 0.0]
-         : stage === 2 ? [1.1, 0.5, 0.2]
-         :               [1.11,0.5,0.2],
+    pos:  stage === 0 ? [2, 4, 6]
+         : stage === 1 ? [2.0, 5.0, 3.2]
+         : stage === 2 ? [4.0, 5.0, 1.8]
+         :               [1.0, 2.0, 3.0],
+    tgt:  stage === 0 ? [0.8, 1.5, 0]
+         : stage === 1 ? [2.0, 5.0, 1.0]
+         : stage === 2 ? [1.1, 4.0, 0.2]
+         :               [1.11, 5.0, 2.0],
     config: { mass: 2, tension: 120, friction: 40 }
   });
-
   useFrame(() => {
     camera.position.fromArray(pos.get());
     camera.lookAt(...tgt.get());
@@ -27,14 +39,28 @@ function CameraSpring({ stage }) {
   return null;
 }
 
-/* ─────────────────── Room model ─────────────────── */
+/* ─────────── Room model (scaled 0.015×) ─────────── */
 function Room() {
   const { scene } = useGLTF('/room_lowpoly.glb');
-  return <primitive object={scene} receiveShadow />;
+
+  /* turn off every light that came with the model */
+  scene.traverse(o => {
+    if (o.isLight) o.intensity = 0;
+  });
+
+  return (
+    <primitive
+      object={scene}
+      scale={0.015}
+      position={[0, 1, 0]}
+      receiveShadow
+    />
+  );
 }
+
 useGLTF.preload('/room_lowpoly.glb');
 
-/* ─────────────────── Overlay ─────────────────── */
+/* ─────────── Overlay ─────────── */
 function AboutOverlay({ onContinue }) {
   return (
     <div style={{
@@ -47,13 +73,6 @@ function AboutOverlay({ onContinue }) {
       <p style={{maxWidth:600, lineHeight:1.5}}>
         Welcome to my retro studio. Scroll slowly & interact with objects to discover my work.
       </p>
-      <div style={{
-        marginTop:'2rem', padding:'1rem 1.5rem', background:'#222',
-        borderRadius:8, maxWidth:400
-      }}>
-        <h2>About Me</h2>
-        <p>I’m Kejdi — front-end dev obsessed with WebGL, shaders and playful UX.</p>
-      </div>
       <button
         style={{
           marginTop:'2rem', padding:'0.6rem 1.4rem',
@@ -68,65 +87,154 @@ function AboutOverlay({ onContinue }) {
   );
 }
 
-/* ─────────────────── Main App ─────────────────── */
+/* ─────────── Main ─────────── */
 export default function App() {
-  const [stage, setStage] = useState(0);         // 0..3
-  const [overlay, setOverlay] = useState(false); // About overlay open?
-  const [lock, setLock] = useState(false);       // scroll locked?
+  const [stage, setStage] = useState(0);
+  const [overlay, setOvl] = useState(false);
+  const [lock, setLock]   = useState(false);
+
+  /* hide OS scroll-bars */
+  useEffect(() => {
+    const css = document.createElement('style');
+    css.innerHTML = `
+      body::-webkit-scrollbar{display:none;}
+      body{ scrollbar-width:none; -ms-overflow-style:none; }
+    `;
+    document.head.appendChild(css);
+    return () => document.head.removeChild(css);
+  }, []);
 
   /* scroll thresholds */
   useEffect(() => {
-    function onScroll() {
-      if (lock) return;               // ignore while overlay up
-      const y = window.scrollY;
-      if (y > 150 && stage === 0) setStage(1);
-      if (y > 450 && stage === 1) setStage(2);
-      if (y > 800 && stage === 2) setStage(3);
-    }
+    const onScroll = () => {
+      if (lock) return;
+      const y = scrollY;
+      if (y > 150  && stage === 0) setStage(1);
+      if (y > 600  && stage === 1 && !overlay) setStage(2);
+      if (y > 1000 && stage === 2) setStage(3);
+    };
     addEventListener('scroll', onScroll);
     return () => removeEventListener('scroll', onScroll);
-  }, [stage, lock]);
+  }, [stage, lock, overlay]);
 
-  /* open overlay the first time we hit stage-1 */
+  /* overlay trigger */
   useEffect(() => {
     if (stage === 1 && !overlay) {
-      setOverlay(true);
-      setLock(true);
-      document.body.style.overflow = 'hidden';
+      const id = setTimeout(() => {
+        setOvl(true);
+        setLock(true);
+        document.body.style.overflow = 'hidden';
+      }, 600);
+      return () => clearTimeout(id);
     }
-  }, [stage]);
+  }, [stage, overlay]);
 
-  /* unlock scrolling when overlay dismissed */
-  function closeOverlay() {
-    setOverlay(false);
+  const closeOverlay = () => {
+    setOvl(false);
     setLock(false);
     document.body.style.overflow = 'auto';
     setStage(2);
-  }
+  };
 
   return (
     <>
-      <Canvas
-        shadows
-        gl={{ physicallyCorrectLights:true }}
-        camera={{ position:[1.6,2.2,3.8], fov:60 }}
-        style={{ width:'130vw', height:'120vh' }}
-      >
-        {/* lights */}
-        <ambientLight intensity={0.25}/>
-        <hemisphereLight skyColor={0xffffff} groundColor={0x444488} intensity={0.2}/>
-        <directionalLight position={[5,10,5]} intensity={1.2} castShadow
-          shadow-mapSize-width={1024} shadow-mapSize-height={1024}/>
-        <pointLight position={[1.1,1.3,-0.3]} intensity={0.8} color={0xffcc88} distance={3}/>
-        <Environment preset="studio"/>
+<Canvas
+  shadows
+  gl={{
+    physicallyCorrectLights: true,
+    toneMappingExposure: 0.4,     // ↓ overall brightness
+  }}
+  camera={{ position: [2, 4, 6], fov: 60 }}
+  style={{ width: '100vw', height: '100vh' }}
+>
+  {/* ───── REALLY DIM RIG ───── */}
+  {/* Ambient just to keep total black away */}
+  <ambientLight intensity={0.03} color={0xffffff} />
 
-        <CameraSpring stage={stage}/>
+  {/* Key + shadows – half the power it had */}
+  <pointLight
+    position={[ 0.4, 1.2,  0.6]}  // lava-lamp
+    color={0xff6699}
+    intensity={0.4}
+    distance={3}
+  />
+  <pointLight
+    position={[ 0.2, 1.45,-0.4]}  // monitor glow
+    color={0x99ccff}
+    intensity={1.2}
+    distance={2}
+  />
+  <pointLight
+    position={[-0.6, 1.0, 0.2]}   // desk lamp
+    color={0xffddaa}
+    intensity={0.7}
+    distance={2}
+  />
+{import.meta.env.DEV && <LogLights />}
+  {/* ───── Post-processing ───── */}
+  {/* subtle ambient-occlusion so crevices darken */} 
+<EffectComposer multisampling={1}>
+    {/* subtle ambient-occlusion so crevices darken */}
+    <SSAO
+      radius={-0.15}
+      intensity={-2}
+      luminanceInfluence={-0.2}
+      color="black"
+    />
+
+    {/* monitor & lamp bloom */}
+    <Bloom
+      intensity={-0.1}
+      kernelSize={KernelSize.SMALL}
+      luminanceThreshold={-0.1}
+      luminanceSmoothing={-0.1}
+      height={200}
+    />
+
+    {/* darkens corners, focuses eye */}
+    <Vignette
+      eskil={false}
+      offset={-0.1}
+      darkness={0.2}
+      blendFunction={BlendFunction.NORMAL}
+    />
+  </EffectComposer>
+
+        {/* low ambient so shadows read as dark */}
+        <ambientLight intensity={1} />
+
+        {/* soft global environment reflections */}
+        <Environment
+  preset="studio"
+  intensity={0.25}     // ↓ overall bounce light
+  background={false}   // keep black backdrop so nothing glows
+/>
+        {/* soft-shadow post-blur */}
+        <SoftShadows size={100} focus={0.5} samples={20} />
+
+        {/* subtle contact shadow under objects */}
+        <ContactShadows
+          position={[1, 1, 1]}
+          opacity={0.2}
+          scale={1}
+          blur={2}
+          far={1}
+        />
+
+        <CameraSpring stage={stage} />
+
+        {import.meta.env.DEV && stage===0 && (
+          <>
+            <TweakCamera />
+            <IntroCamHelper />
+          </>
+        )}
 
         <Suspense fallback={null}>
-          <Room/>
+          <Room />
           <GameBoyOnDesk
             visible={stage>=2}
-            onButton={n=>n==='Button_A'&&setStage(3)}
+            onButton={(n)=>n==='Button_A'&&setStage(3)}
           />
         </Suspense>
       </Canvas>

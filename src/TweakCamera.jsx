@@ -1,12 +1,13 @@
 import { useThree, useFrame } from '@react-three/fiber';
 import { useControls, button } from 'leva';
 
+
 export default function TweakCamera() {
   const camera   = useThree((s) => s.camera);
   const controls = useThree((s) => s.controls);   // may be null on first render
 
   // Safe fallback values when controls === null
-  const target = controls ? controls.target : { x: 0, y: 0, z: 0 };
+  const target = controls ? controls.target : { x: 2, y: 5, z: 0 };
 
   const gui = useControls('Intro Cam', {
     x:  { value: camera.position.x, min: -5, max: 5, step: 0.01 },
@@ -19,6 +20,7 @@ export default function TweakCamera() {
       const p = [gui.x, gui.y, gui.z].map(n => +n.toFixed(2));
       const t = [gui.tx, gui.ty, gui.tz].map(n => +n.toFixed(2));
       console.log('Paste into spring:\n  pos:', p, ', target:', t);
+      
     })
   });
 
