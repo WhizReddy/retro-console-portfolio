@@ -148,48 +148,72 @@ export default function App() {
         gl={{
           physicallyCorrectLights: true,
           toneMapping: THREE.ACESFilmicToneMapping,
-          toneMappingExposure: 0.4
+          toneMappingExposure: 0.3  // Slightly darker for more drama
         }}
-        camera={{ position: [-9.1, 8.35, 9.53], fov: 60 }}  // Updated initial camera position from IntroCam
+        camera={{ position: [-9.1, 8.35, 9.53], fov: 60 }}  // Updated initial camera position from new IntroCam
         style={{ width: '100vw', height: '100vh' }}
       >
-        {/* ——— LIGHT RIG ——— */}
-        <ambientLight intensity={0.03} />
+        {/* ——— DRAMATIC LIGHT RIG ——— */}
+        <ambientLight intensity={0.01} color={0x2a2a3a} />  {/* Darker, cooler ambient */}
+        
+        {/* Main key light - stronger and more directional */}
         <directionalLight
-          position={[5, 7, 5]}
-          intensity={0.35}
-          color={0xe0e0e0}
+          position={[8, 10, 6]}
+          intensity={0.6}
+          color={0xf0f0ff}
           castShadow
           shadow-bias={-0.0001}
           shadow-mapSize-width={4096}
           shadow-mapSize-height={4096}
           shadow-camera-near={0.01}
-          shadow-camera-far={5}
-          shadow-camera-left={-1}
-          shadow-camera-right={1}
-          shadow-camera-top={1}
-          shadow-camera-bottom={-1}
+          shadow-camera-far={8}
+          shadow-camera-left={-2}
+          shadow-camera-right={2}
+          shadow-camera-top={2}
+          shadow-camera-bottom={-2}
         />
-        {/* coloured practicals */}
-        <pointLight position={[ 0.4, 1.2,  0.6]} color={0xff6699} intensity={0.4} distance={3}/>
-        <pointLight position={[ 0.2, 1.45,-0.4]} color={0x99ccff} intensity={1.2} distance={2}/>
-        <pointLight position={[-0.6, 1.0,  0.2]} color={0xffddaa} intensity={0.7} distance={2}/>
+        
+        {/* Dramatic rim light */}
+        <directionalLight
+          position={[-5, 3, -3]}
+          intensity={0.25}
+          color={0x6699ff}
+        />
+        
+        {/* Enhanced colored practicals */}
+        <pointLight position={[ 0.4, 1.2,  0.6]} color={0xff3366} intensity={0.8} distance={2.5}/>
+        <pointLight position={[ 0.2, 1.45,-0.4]} color={0x3388ff} intensity={1.8} distance={1.8}/>
+        <pointLight position={[-0.6, 1.0,  0.2]} color={0xffaa33} intensity={1.2} distance={1.5}/>
+        
+        {/* Additional dramatic accent lights */}
+        <pointLight position={[ 1.2, 0.8, -0.8]} color={0xff6600} intensity={0.6} distance={2}/>
+        <pointLight position={[-0.8, 1.8,  0.8]} color={0x9933ff} intensity={0.9} distance={2.2}/>
+        <spotLight
+          position={[2, 3, 2]}
+          target-position={[0, 0.5, 0]}
+          angle={Math.PI / 6}
+          penumbra={0.5}
+          intensity={0.8}
+          color={0xffffff}
+          castShadow
+        />
 
-        {/* post-processing - Fixed to use N8AO instead of SSAO */}
+        {/* Enhanced post-processing for drama */}
         <EffectComposer multisampling={2}>
-          <N8AO aoRadius={0.15} intensity={10} />
-          <Bloom intensity={0.6} kernelSize={KernelSize.SMALL} luminanceThreshold={0.7} />
-          <Vignette eskil={false} offset={0.25} darkness={0.8} blendFunction={BlendFunction.NORMAL}/>
+          <N8AO aoRadius={0.2} intensity={15} />
+          <Bloom intensity={0.9} kernelSize={KernelSize.MEDIUM} luminanceThreshold={0.6} />
+          <Vignette eskil={false} offset={0.15} darkness={1.2} blendFunction={BlendFunction.NORMAL}/>
         </EffectComposer>
 
-        {/* soft shadows */}
-        <SoftShadows size={80} focus={0.5} samples={20} />
-        <ContactShadows position={[0,0.01,0]} opacity={0.55} scale={2.5} blur={3} far={2}/>
+        {/* Enhanced shadows for drama */}
+        <SoftShadows size={100} focus={0.8} samples={25} />
+        <ContactShadows position={[0,0.01,0]} opacity={0.75} scale={3} blur={2.5} far={2.5}/>
 
         {/* camera & helpers */}
         <CameraSpring stage={stage}/>
-        {/* {import.meta.env.DEV && stage === 0 && <IntroCamHelper />} */}
-        {/* {import.meta.env.DEV && <LogLights />} */}
+        {/* Temporarily disable these to test camera control */}
+        {/* {import.meta.env.DEV && stage===0 && (<><TweakCamera/><IntroCamHelper/></>)} */}
+        {import.meta.env.DEV && <LogLights />}
 
         {/* scene */}
         <Suspense fallback={null}>
