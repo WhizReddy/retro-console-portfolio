@@ -1,8 +1,7 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 
 const GRID_SIZE = 20;
-const CANVAS_WIDTH = 400;
-const CANVAS_HEIGHT = 500; // Make it taller
+const CANVAS_SIZE = 400; // Back to square dimensions
 const INITIAL_SNAKE = [{ x: 10, y: 10 }];
 const INITIAL_DIRECTION = { x: 0, y: -1 };
 const GAME_SPEED = 150;
@@ -98,11 +97,11 @@ export default function SnakeGame({ onComplete, onClose }) {
     if (!canvas) return;
 
     const ctx = canvas.getContext('2d');
-    const cellSize = CANVAS_WIDTH / GRID_SIZE;
+    const cellSize = CANVAS_SIZE / GRID_SIZE;
 
     // Clear canvas
     ctx.fillStyle = '#000';
-    ctx.fillRect(0, 0, CANVAS_WIDTH, CANVAS_HEIGHT);
+    ctx.fillRect(0, 0, CANVAS_SIZE, CANVAS_SIZE);
 
     // Draw grid
     ctx.strokeStyle = '#333';
@@ -110,12 +109,12 @@ export default function SnakeGame({ onComplete, onClose }) {
     for (let i = 0; i <= GRID_SIZE; i++) {
       ctx.beginPath();
       ctx.moveTo(i * cellSize, 0);
-      ctx.lineTo(i * cellSize, CANVAS_HEIGHT);
+      ctx.lineTo(i * cellSize, CANVAS_SIZE);
       ctx.stroke();
       
       ctx.beginPath();
       ctx.moveTo(0, i * cellSize);
-      ctx.lineTo(CANVAS_WIDTH, i * cellSize);
+      ctx.lineTo(CANVAS_SIZE, i * cellSize);
       ctx.stroke();
     }
 
@@ -257,8 +256,8 @@ export default function SnakeGame({ onComplete, onClose }) {
           <div>
             <canvas
               ref={canvasRef}
-              width={CANVAS_WIDTH}
-              height={CANVAS_HEIGHT}
+              width={CANVAS_SIZE}
+              height={CANVAS_SIZE}
               style={{
                 border: '2px solid #0f0',
                 borderRadius: '5px',

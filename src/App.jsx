@@ -190,10 +190,13 @@ export default function App() {
     }
 
     // Stage 3: Monitor guidance appears, intro disappears
-    if (stage === 3) {
+    if (stage === 3 && !showMonitorGuidance) {
       setShowIntroOverlay(false);
-      setShowMonitorGuidance(true);
-    } else {
+      const timer = setTimeout(() => {
+        setShowMonitorGuidance(true);
+      }, 800); // 800ms delay before monitor guidance appears
+      return () => clearTimeout(timer);
+    } else if (stage < 3) {
       setShowMonitorGuidance(false);
     }
 
@@ -362,12 +365,71 @@ export default function App() {
         flashy={true}
       />
 
-      <MonitorGuidance 
-        visible={showMonitorGuidance && !gameCompleted} 
-        onPlayClick={() => setShowSnakeGame(true)}
-        showPlayButton={true}
-        position="monitor-screen"
-      />
+      {/* Bottom retro message */}
+      {showMonitorGuidance && !gameCompleted && (
+        <div
+          style={{
+            position: "fixed",
+            bottom: "80px",
+            left: "50%",
+            transform: "translateX(-50%)",
+            zIndex: 12,
+            background: "linear-gradient(45deg, #000, #111)",
+            color: "#0f0",
+            padding: "1rem 2rem",
+            borderRadius: "8px",
+            textAlign: "center",
+            maxWidth: "90vw",
+            width: "400px",
+            border: "2px solid #0f0",
+            boxShadow: "0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.1)",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            fontFamily: "monospace",
+            textShadow: "0 0 10px #0f0",
+            backdropFilter: "blur(10px)",
+          }}
+        >
+          👆 Focus on the monitor area to explore my work!
+        </div>
+      )}
+
+      {/* Play button on monitor screen */}
+      {showMonitorGuidance && !gameCompleted && (
+        <button
+          onClick={() => setShowSnakeGame(true)}
+          style={{
+            position: "fixed",
+            top: "52%", // A bit more down
+            left: "57%", // More to the right
+            transform: "translate(-50%, -50%)",
+            zIndex: 12,
+            background: "#000",
+            color: "#0f0",
+            border: "2px solid #0f0",
+            padding: "0.8rem 1.5rem",
+            borderRadius: "8px",
+            fontSize: "1rem",
+            fontWeight: "bold",
+            cursor: "pointer",
+            fontFamily: "monospace",
+            boxShadow: "0 0 10px rgba(0, 255, 0, 0.3)",
+            transition: "all 0.2s",
+          }}
+          onMouseOver={(e) => {
+            e.target.style.background = "#0f0";
+            e.target.style.color = "#000";
+            e.target.style.boxShadow = "0 0 15px rgba(0, 255, 0, 0.6)";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.background = "#000";
+            e.target.style.color = "#0f0";
+            e.target.style.boxShadow = "0 0 10px rgba(0, 255, 0, 0.3)";
+          }}
+        >
+          🐍 PLAY SNAKE
+        </button>
+      )}
 
       {/* Progress indicator */}
       <ScrollProgressIndicator

@@ -38,13 +38,13 @@ const MonitorGuidance = React.memo(function MonitorGuidance({
       case "center":
         return {
           top: "50%",
-          left: "50%",
+          left: "55%",
           transform: `translate(-50%, -50%) scale(${scale})`,
         };
       case "monitor-screen":
         return {
-          top: "45%",
-          left: "60%", // Positioned to the right like it's on the monitor
+          top: "50%",
+          left: "55%", // Moved a bit more left
           transform: `translate(-50%, -50%) scale(${scale})`,
         };
       default:
