@@ -1,32 +1,19 @@
-/**
- * GameBoyOnDesk.jsx
- * -----------------------------------------------------
- * Loads /game_boy_original.glb, puts it on the desk, adds
- * optional button-click handling and shadows.
- *
- * ‣ Drop the GLB into /public as  game_boy_original.glb
- * ‣ Tweak position / rotation / scale until it sits right.
- * ‣ Props:
- *     • visible   (boolean) – show / hide
- *     • onButton  (fn)      – called with mesh.name when a
- *                             button mesh is clicked
- */
-
+// GameBoyOnDesk.jsx - Updated with proper desk positioning
 import React, { Suspense, useEffect, useRef } from 'react';
-import { useGLTF, PresentationControls } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { useThree } from '@react-three/fiber';
+import * as THREE from 'three';
 
 export default function GameBoyOnDesk({ visible, onButton }) {
-  /* ---------- load GLB ---------- */
   const { scene } = useGLTF('/game_boy_original.glb');
-
-  /* ---------- find button meshes once ---------- */
   const buttons = useRef([]);
+  
+  // Find button meshes once
   useEffect(() => {
     if (!scene) return;
     buttons.current = [
       'Button_A',
-      'Button_B',
+      'Button_B', 
       'Dpad_Up',
       'Dpad_Down',
       'Dpad_Left',
@@ -36,38 +23,53 @@ export default function GameBoyOnDesk({ visible, onButton }) {
       .filter(Boolean);
   }, [scene]);
 
-  /* ---------- ray-cast clicks ---------- */
-  const { raycaster, pointer, camera } = useThree();
-  useEffect(() => {
-    function handle(e) {
+  // Ray-cast clicks
+  const gbRef = useRef();   // <-- add this
+
+    useEffect(() => {
+    function onKey(e) {
       if (!visible) return;
-      pointer.x = (e.clientX / innerWidth) * 2 - 1;
-      pointer.y = -(e.clientY / innerHeight) * 2 + 1;
-      raycaster.setFromCamera(pointer, camera);
-      const hit = raycaster.intersectObjects(buttons.current, true)[0];
-      if (hit && onButton) onButton(hit.object.name);
+      const p = gbRef.current.position;
+      const step = e.shiftKey ? 0.1 : 0.02;     // hold Shift for bigger jumps
+      switch (e.key) {
+        case 'ArrowUp':    p.z -= step; break;  // towards camera
+        case 'ArrowDown':  p.z += step; break;
+        case 'ArrowLeft':  p.x -= step; break;
+        case 'ArrowRight': p.x += step; break;
+        case 'PageUp':     p.y += step; break;  // raise / lower
+        case 'PageDown':   p.y -= step; break;
+        case 'q':          gbRef.current.rotation.z += 0.05; break;
+        case 'e':          gbRef.current.rotation.z -= 0.05; break;
+        default: return;
+      }
+      console.log(
+        `pos = [${p.x.toFixed(3)}, ${p.y.toFixed(3)}, ${p.z.toFixed(3)}]`,
+        `rot.z = ${gbRef.current.rotation.z.toFixed(3)}`
+      );
     }
-    window.addEventListener('pointerdown', handle);
-    return () => window.removeEventListener('pointerdown', handle);
-  }, [visible, onButton, pointer, raycaster, camera]);
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [visible]);
 
-  /* ---------- nothing rendered when hidden ---------- */
-  if (!visible) return null;
+  // REPLACE THESE VALUES WITH YOUR ACTUAL DESK MEASUREMENTS:
+  const DESK_POS = useRef([0, 16.10, 0]);        // Y = 16.10 from probe
+  const DESK_CENTER_X = 0.0;     // slide until centred
+  const DESK_CENTER_Z = 0.0;     // slide toward/away camera
 
-  /* ---------- placement tweak here ---------- */
   return (
     <Suspense fallback={null}>
-<group position={[0,2,0]}
-  rotation={[ -Math.PI / 2, 0, 1 ]}   // ⬅ new angles
-
-scale={0.2}>
-  <primitive object={scene} />
-  <axesHelper args={[0.5]} />
-</group>
+<group
+  ref={gbRef}
+  position={DESK_POS.current}
+  rotation={[-Math.PI / 2, 0, 0]}              // flat; we’ll tweak later
+  scale={0.2}
+>
+        <primitive object={scene} />
+        {/* Uncomment to see axes while positioning */}
+        {/* <axesHelper args={[0.5]} /> */}
+      </group>
     </Suspense>
   );
 }
 
-/* preload so there’s no hitch when Stage-2 shows */
 useGLTF.preload('/game_boy_original.glb');
-    
