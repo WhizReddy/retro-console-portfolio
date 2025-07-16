@@ -23,6 +23,7 @@ import IntroOverlay from "../components/IntroOverlay";
 import MonitorGuidance from "../components/MonitorGuidance";
 import ScrollProgressIndicator from "../components/ScrollProgressIndicator";
 import SnakeGame from "./SnakeGame";
+import RetroMenu from "./RetroMenu";
 
 /* ─────────── Camera spring ─────────── */
 function CameraSpring({ stage }) {
@@ -32,7 +33,7 @@ function CameraSpring({ stage }) {
       stage === 0
         ? [-9.1, 8.35, 9.53] // intro - wide view of studio
         : stage === 1
-        ? [3.0, 4.0, 2.5] // slightly closer, but stay high
+        ? [1.0, 5.0, 2.5] // slightly closer, but stay high
         : stage === 2
         ? [3.5, 5.5, 2.5] // closer to monitor, but still above
         : [2.5, 8.5, -1.5], // stay focused on monitor
@@ -40,7 +41,7 @@ function CameraSpring({ stage }) {
       stage === 0
         ? [2, 3.0, -0.5] // looking at center of studio
         : stage === 1
-        ? [2.0, 4.0, -2.0] // looking at studio center
+        ? [2.0, 5.0, -5.0] // looking at studio center
         : stage === 2
         ? [3.5, 7.0, -3.5] // looking at monitor/desk area
         : [4.5, 8.0, -4.6], // keep looking at monitor area
@@ -133,6 +134,7 @@ export default function App() {
   const [showMonitorGuidance, setShowMonitorGuidance] = useState(false);
   const [showSnakeGame, setShowSnakeGame] = useState(false);
   const [gameCompleted, setGameCompleted] = useState(false);
+  const [showRetroMenu, setShowRetroMenu] = useState(false);
   const [lock, setLock] = useState(false);
   const roomRef = useRef();
 
@@ -382,7 +384,8 @@ export default function App() {
             maxWidth: "90vw",
             width: "400px",
             border: "2px solid #0f0",
-            boxShadow: "0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.1)",
+            boxShadow:
+              "0 0 20px rgba(0, 255, 0, 0.3), inset 0 0 10px rgba(0, 255, 0, 0.1)",
             fontSize: "1rem",
             fontWeight: "bold",
             fontFamily: "monospace",
@@ -444,8 +447,17 @@ export default function App() {
           onComplete={() => {
             setGameCompleted(true);
             setShowSnakeGame(false);
+            setShowRetroMenu(true);
           }}
           onClose={() => setShowSnakeGame(false)}
+        />
+      )}
+
+      {/* Retro Menu */}
+      {showRetroMenu && (
+        <RetroMenu
+          visible={showRetroMenu}
+          onClose={() => setShowRetroMenu(false)}
         />
       )}
 
