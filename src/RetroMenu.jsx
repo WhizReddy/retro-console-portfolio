@@ -47,6 +47,27 @@ const MENU_ITEMS = [
       ],
     },
   },
+  {
+    id: "games",
+    title: "🎮 RETRO GAMES",
+    isGameMenu: true,
+    games: [
+      { id: "snake", name: "🐍 Snake", description: "Classic snake game" },
+      { id: "pong", name: "🏓 Pong", description: "Retro paddle game" },
+      { id: "tetris", name: "🧩 Tetris", description: "Block puzzle game" },
+      { id: "breakout", name: "🧱 Breakout", description: "Brick breaking game" }
+    ]
+  },
+  {
+    id: "contact",
+    title: "📞 CONTACT ME",
+    isContactForm: true,
+    content: {
+      title: "GET IN TOUCH",
+      description: "Let's work together on something amazing",
+      form: true
+    }
+  },
 ];
 
 export default function RetroMenu({ visible, onClose }) {
@@ -218,56 +239,236 @@ export default function RetroMenu({ visible, onClose }) {
         ) : (
           // Details View
           <div>
-            <div style={{ textAlign: "center", marginBottom: "2rem" }}>
-              <h2
-                style={{
-                  fontSize: "2rem",
-                  textShadow: "0 0 15px #0f0",
-                  margin: "0 0 0.5rem 0",
-                  letterSpacing: "2px",
-                }}
-              >
-                {selectedItem.content.title}
-              </h2>
-              <p
-                style={{
-                  color: "#ccc",
-                  fontSize: "1.2rem",
-                  fontStyle: "italic",
-                  margin: "0 0 1rem 0",
-                }}
-              >
-                {selectedItem.content.description}
-              </p>
-              <div
-                style={{
-                  height: "2px",
-                  background:
-                    "linear-gradient(90deg, transparent, #0f0, transparent)",
-                  margin: "1rem 0",
-                }}
-              />
-            </div>
-
-            <div style={{ marginBottom: "2rem" }}>
-              {selectedItem.content.details.map((detail, index) => (
-                <div
-                  key={index}
-                  style={{
-                    padding: "0.8rem 1.5rem",
-                    margin: "0.5rem 0",
-                    background: "rgba(0, 255, 0, 0.05)",
-                    border: "1px solid rgba(0, 255, 0, 0.2)",
-                    borderRadius: "8px",
-                    fontSize: "1rem",
-                    lineHeight: "1.4",
-                    borderLeft: "4px solid #0f0",
-                  }}
-                >
-                  {detail}
+            {selectedItem.isGameMenu ? (
+              // Games Menu
+              <div>
+                <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                  <h2 style={{
+                    fontSize: "2rem",
+                    textShadow: "0 0 15px #0f0",
+                    margin: "0 0 0.5rem 0",
+                    letterSpacing: "2px",
+                  }}>
+                    🎮 RETRO ARCADE
+                  </h2>
+                  <p style={{
+                    color: "#ccc",
+                    fontSize: "1.2rem",
+                    fontStyle: "italic",
+                    margin: "0 0 1rem 0",
+                  }}>
+                    Choose your game and have fun!
+                  </p>
                 </div>
-              ))}
-            </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1rem", marginBottom: "2rem" }}>
+                  {selectedItem.games.map((game, index) => (
+                    <div
+                      key={game.id}
+                      style={{
+                        padding: "1.5rem",
+                        background: "rgba(0, 255, 0, 0.05)",
+                        border: "2px solid rgba(0, 255, 0, 0.3)",
+                        borderRadius: "10px",
+                        textAlign: "center",
+                        cursor: "pointer",
+                        transition: "all 0.3s ease",
+                      }}
+                      onMouseOver={(e) => {
+                        e.target.style.background = "rgba(0, 255, 0, 0.1)";
+                        e.target.style.borderColor = "#0f0";
+                        e.target.style.boxShadow = "0 0 15px rgba(0, 255, 0, 0.3)";
+                      }}
+                      onMouseOut={(e) => {
+                        e.target.style.background = "rgba(0, 255, 0, 0.05)";
+                        e.target.style.borderColor = "rgba(0, 255, 0, 0.3)";
+                        e.target.style.boxShadow = "none";
+                      }}
+                      onClick={() => {
+                        audioManager.playSound("menuSelect");
+                        alert(`${game.name} - Coming Soon!`);
+                      }}
+                    >
+                      <div style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>
+                        {game.name.split(' ')[0]}
+                      </div>
+                      <div style={{ fontSize: "1.1rem", fontWeight: "bold", marginBottom: "0.3rem" }}>
+                        {game.name.substring(2)}
+                      </div>
+                      <div style={{ fontSize: "0.9rem", opacity: 0.8 }}>
+                        {game.description}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            ) : selectedItem.isContactForm ? (
+              // Contact Form
+              <div>
+                <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                  <h2 style={{
+                    fontSize: "2rem",
+                    textShadow: "0 0 15px #0f0",
+                    margin: "0 0 0.5rem 0",
+                    letterSpacing: "2px",
+                  }}>
+                    📞 CONTACT TERMINAL
+                  </h2>
+                  <p style={{
+                    color: "#ccc",
+                    fontSize: "1.2rem",
+                    fontStyle: "italic",
+                    margin: "0 0 1rem 0",
+                  }}>
+                    Send me a message through the retro terminal
+                  </p>
+                </div>
+
+                <div style={{ 
+                  background: "rgba(0, 0, 0, 0.5)", 
+                  border: "2px solid #0f0", 
+                  borderRadius: "10px", 
+                  padding: "2rem",
+                  fontFamily: "monospace"
+                }}>
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <div style={{ color: "#0f0", marginBottom: "0.5rem" }}>&gt; ENTER_NAME:</div>
+                    <input
+                      type="text"
+                      placeholder="Your name..."
+                      style={{
+                        width: "100%",
+                        background: "transparent",
+                        border: "1px solid #0f0",
+                        color: "#0f0",
+                        padding: "0.5rem",
+                        fontFamily: "monospace",
+                        fontSize: "1rem",
+                      }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <div style={{ color: "#0f0", marginBottom: "0.5rem" }}>&gt; ENTER_EMAIL:</div>
+                    <input
+                      type="email"
+                      placeholder="your.email@example.com"
+                      style={{
+                        width: "100%",
+                        background: "transparent",
+                        border: "1px solid #0f0",
+                        color: "#0f0",
+                        padding: "0.5rem",
+                        fontFamily: "monospace",
+                        fontSize: "1rem",
+                      }}
+                    />
+                  </div>
+                  
+                  <div style={{ marginBottom: "1.5rem" }}>
+                    <div style={{ color: "#0f0", marginBottom: "0.5rem" }}>&gt; ENTER_MESSAGE:</div>
+                    <textarea
+                      placeholder="Type your message here..."
+                      rows="4"
+                      style={{
+                        width: "100%",
+                        background: "transparent",
+                        border: "1px solid #0f0",
+                        color: "#0f0",
+                        padding: "0.5rem",
+                        fontFamily: "monospace",
+                        fontSize: "1rem",
+                        resize: "vertical",
+                      }}
+                    />
+                  </div>
+                  
+                  <button
+                    onClick={() => {
+                      audioManager.playSound("menuSelect");
+                      alert("Message sent! (Demo mode - not actually sent)");
+                    }}
+                    style={{
+                      background: "linear-gradient(45deg, #0f0, #0a0)",
+                      color: "#000",
+                      border: "2px solid #0f0",
+                      padding: "0.8rem 2rem",
+                      fontSize: "1rem",
+                      fontFamily: "monospace",
+                      fontWeight: "bold",
+                      borderRadius: "5px",
+                      cursor: "pointer",
+                      boxShadow: "0 0 10px rgba(0, 255, 0, 0.5)",
+                      transition: "all 0.2s",
+                    }}
+                    onMouseOver={(e) => {
+                      e.target.style.boxShadow = "0 0 15px rgba(0, 255, 0, 0.8)";
+                      e.target.style.transform = "scale(1.05)";
+                    }}
+                    onMouseOut={(e) => {
+                      e.target.style.boxShadow = "0 0 10px rgba(0, 255, 0, 0.5)";
+                      e.target.style.transform = "scale(1)";
+                    }}
+                  >
+                    &gt; SEND_MESSAGE
+                  </button>
+                </div>
+              </div>
+            ) : (
+              // Regular Details View
+              <div>
+                <div style={{ textAlign: "center", marginBottom: "2rem" }}>
+                  <h2
+                    style={{
+                      fontSize: "2rem",
+                      textShadow: "0 0 15px #0f0",
+                      margin: "0 0 0.5rem 0",
+                      letterSpacing: "2px",
+                    }}
+                  >
+                    {selectedItem.content.title}
+                  </h2>
+                  <p
+                    style={{
+                      color: "#ccc",
+                      fontSize: "1.2rem",
+                      fontStyle: "italic",
+                      margin: "0 0 1rem 0",
+                    }}
+                  >
+                    {selectedItem.content.description}
+                  </p>
+                  <div
+                    style={{
+                      height: "2px",
+                      background:
+                        "linear-gradient(90deg, transparent, #0f0, transparent)",
+                      margin: "1rem 0",
+                    }}
+                  />
+                </div>
+
+                <div style={{ marginBottom: "2rem" }}>
+                  {selectedItem.content.details.map((detail, index) => (
+                    <div
+                      key={index}
+                      style={{
+                        padding: "0.8rem 1.5rem",
+                        margin: "0.5rem 0",
+                        background: "rgba(0, 255, 0, 0.05)",
+                        border: "1px solid rgba(0, 255, 0, 0.2)",
+                        borderRadius: "8px",
+                        fontSize: "1rem",
+                        lineHeight: "1.4",
+                        borderLeft: "4px solid #0f0",
+                      }}
+                    >
+                      {detail}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
 
             <div style={{ textAlign: "center" }}>
               <button

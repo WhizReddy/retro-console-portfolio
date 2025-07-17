@@ -24,6 +24,10 @@ import MonitorGuidance from "../components/MonitorGuidance";
 import ScrollProgressIndicator from "../components/ScrollProgressIndicator";
 import SnakeGame from "./SnakeGame";
 import RetroMenu from "./RetroMenu";
+import RainEffect from "./RainEffect";
+import MatrixCursor from "./MatrixCursor";
+import ScrollIndicator from "../components/ScrollIndicator";
+import GameIndicator from "../components/GameIndicator";
 import audioManager from "./AudioManager";
 
 /* ─────────── Camera spring ─────────── */
@@ -34,15 +38,15 @@ function CameraSpring({ stage }) {
       stage === 0
         ? [-9.1, 8.55, 9.53] // intro - wide view of studio
         : stage === 1
-        ? [1.0, 5.0, 2.5] // slightly closer, but stay high
+        ? [-4.0, 7.0, 2.5] // slightly closer, but stay high
         : stage === 2
         ? [3.5, 5.5, 2.5] // closer to monitor, but still above
         : [2.5, 8.5, -1.5], // stay focused on monitor
     tgt:
       stage === 0
-        ? [2, 4.0, -2.5] // looking at center of studio
+        ? [2, 4.5, -2.5] // looking at center of studio
         : stage === 1
-        ? [2.0, 5.0, -5.0] // looking at studio center
+        ? [3.0, 4.0, -2.0] // looking at studio center
         : stage === 2
         ? [3.5, 7.0, -3.5] // looking at monitor/desk area
         : [4.5, 8.0, -4.6], // keep looking at monitor area
@@ -150,49 +154,71 @@ export default function App() {
 
   /* Initialize audio system */
   useEffect(() => {
-    // Start background music after user interaction
-    const startAudio = () => {
-      audioManager.startBackgroundMusic();
-      document.removeEventListener('click', startAudio);
-      document.removeEventListener('keydown', startAudio);
+    // Try to start audio immediately
+    const initAudio = async () => {
+      try {
+        await audioManager.init();
+        audioManager.startBackgroundMusic();
+      } catch (error) {
+        console.log("Audio autoplay blocked, waiting for user interaction");
+        // Fallback: start after user interaction
+        const startAudio = () => {
+          audioManager.startBackgroundMusic();
+          document.removeEventListener("click", startAudio);
+          document.removeEventListener("keydown", startAudio);
+        };
+
+        document.addEventListener("click", startAudio);
+        document.addEventListener("keydown", startAudio);
+      }
     };
-    
-    document.addEventListener('click', startAudio);
-    document.addEventListener('keydown', startAudio);
-    
-    return () => {
-      document.removeEventListener('click', startAudio);
-      document.removeEventListener('keydown', startAudio);
-    };
+
+    initAudio();
   }, []);
 
   /* Handle wheel events for stage progression */
   useEffect(() => {
     let wheelAccumulator = 0;
-    const wheelThreshold = 150; // More wheel movement needed per stage (less sensitive, more controlled)
+    let lastStageChange = 0;
+    const wheelThreshold = 200; // Increased threshold for more control
+    const stageCooldown = 800; // Minimum time between stage changes (ms)
 
     const handleWheel = (e) => {
       if (lock) return;
 
       e.preventDefault();
+      const now = Date.now();
+
+      // Prevent rapid stage changes
+      if (now - lastStageChange < stageCooldown) {
+        return;
+      }
+
       wheelAccumulator += e.deltaY;
 
       // Stage progression based on wheel accumulation
       if (wheelAccumulator > wheelThreshold && stage < 3) {
         const newStage = stage + 1;
         setStage(newStage);
-        wheelAccumulator = newStage * wheelThreshold; // Set to current stage level
-        
+        wheelAccumulator = 0; // Reset accumulator after stage change
+        lastStageChange = now;
+
         // Play scroll transition sound
-        audioManager.playSound('scroll');
-      } else if (wheelAccumulator < 0 && stage > 0) {
+        audioManager.playSound("scroll");
+      } else if (wheelAccumulator < -wheelThreshold && stage > 0) {
         const newStage = stage - 1;
         setStage(newStage);
-        wheelAccumulator = newStage * wheelThreshold; // Set to current stage level
-        
+        wheelAccumulator = 0; // Reset accumulator after stage change
+        lastStageChange = now;
+
         // Play scroll transition sound
-        audioManager.playSound('scroll');
+        audioManager.playSound("scroll");
       }
+
+      // Decay accumulator over time to prevent buildup
+      setTimeout(() => {
+        wheelAccumulator *= 0.8;
+      }, 100);
     };
 
     window.addEventListener("wheel", handleWheel, { passive: false });
@@ -201,21 +227,33 @@ export default function App() {
 
   /* Handle stage changes and overlay visibility */
   useEffect(() => {
-    // Stage 1: Subtle warning appears
+    // Stage 1: Subtle warning appears with scroll lock
     if (stage === 1 && !showSubtleWarning) {
+      setLock(true); // Lock scrolling immediately
       const timer = setTimeout(() => {
         setShowSubtleWarning(true);
-        audioManager.playSound('warning'); // Play warning sound
+        audioManager.playSound("warning"); // Play warning sound
+
+        // Unlock scrolling after user has time to read (2 seconds)
+        setTimeout(() => {
+          setLock(false);
+        }, 2000);
       }, 400);
       return () => clearTimeout(timer);
     }
 
-    // Stage 2: Flashy intro appears, subtle warning disappears
+    // Stage 2: Flashy intro appears, subtle warning disappears with scroll lock
     if (stage === 2 && !showIntroOverlay) {
       setShowSubtleWarning(false);
+      setLock(true); // Lock scrolling for intro
       const timer = setTimeout(() => {
         setShowIntroOverlay(true);
-        audioManager.playSound('intro'); // Play fanfare sound
+        audioManager.playSound("intro"); // Play fanfare sound
+
+        // Unlock scrolling after user has time to read (2.5 seconds)
+        setTimeout(() => {
+          setLock(false);
+        }, 2500);
       }, 600);
       return () => clearTimeout(timer);
     }
@@ -235,6 +273,7 @@ export default function App() {
     if (stage === 0) {
       setShowSubtleWarning(false);
       setShowIntroOverlay(false);
+      setLock(false); // Ensure scroll is unlocked at start
     }
   }, [stage, showSubtleWarning, showIntroOverlay]);
 
@@ -354,6 +393,78 @@ export default function App() {
         <Suspense fallback={null}>
           <Room ref={roomRef} />
           {import.meta.env.DEV && <DeskProbe target={roomRef} />}
+
+          {/* Multiple Game Indicators positioned around the room */}
+          {stage >= 2 && (
+            <>
+              {/* Snake Game - Near the desk/monitor */}
+              <GameIndicator
+                position={[1.5, 4.5, 0]}
+                emoji="🐍"
+                onPlay={() => {
+                  audioManager.playSound("click");
+                  setShowSnakeGame(true);
+                }}
+              />
+
+              {/* Tetris Game - Left side of room */}
+              <GameIndicator
+                position={[-2.0, 3.5, -1.5]}
+                emoji="🧩"
+                onPlay={() => {
+                  audioManager.playSound("click");
+                  alert("🧩 Tetris - Coming Soon! Classic block puzzle game.");
+                }}
+              />
+
+              {/* Pong Game - Right side of room */}
+              <GameIndicator
+                position={[3.5, 3.0, -2.0]}
+                emoji="🏓"
+                onPlay={() => {
+                  audioManager.playSound("click");
+                  alert("🏓 Pong - Coming Soon! Classic paddle game.");
+                }}
+              />
+
+              {/* Pac-Man Game - Back corner */}
+              <GameIndicator
+                position={[0.5, 2.5, -3.5]}
+                emoji="👻"
+                onPlay={() => {
+                  audioManager.playSound("click");
+                  alert("👻 Pac-Man - Coming Soon! Classic arcade maze game.");
+                }}
+              />
+
+              {/* Space Invaders - High up on wall */}
+              <GameIndicator
+                position={[-1.0, 6.0, -1.0]}
+                emoji="👾"
+                onPlay={() => {
+                  audioManager.playSound("click");
+                  alert(
+                    "👾 Space Invaders - Coming Soon! Classic space shooter."
+                  );
+                }}
+              />
+
+              {/* Breakout - Near window area */}
+              <GameIndicator
+                position={[2.5, 4.0, 1.5]}
+                emoji="🧱"
+                onPlay={() => {
+                  audioManager.playSound("click");
+                  alert(
+                    "🧱 Breakout - Coming Soon! Classic brick breaking game."
+                  );
+                }}
+              />
+            </>
+          )}
+
+          {/* Rain effect outside the room */}
+          <RainEffect count={800} />
         </Suspense>
       </Canvas>
 
@@ -370,23 +481,84 @@ export default function App() {
         <div
           style={{
             position: "fixed",
-            top: "30px",
-            right: "30px",
+            top: "20px",
+            right: "20px",
             zIndex: 10,
-            background: "rgba(255, 255, 255, 0.1)",
-            color: "#fff",
-            padding: "0.8rem 1.2rem",
-            borderRadius: "8px",
-            textAlign: "center",
-            fontSize: "0.9rem",
-            opacity: 0.8,
-            backdropFilter: "blur(5px)",
-            border: "1px solid rgba(255, 255, 255, 0.2)",
-            boxShadow: "0 4px 12px rgba(0, 0, 0, 0.2)",
-            animation: "fadeIn 0.5s ease-in-out",
+            background: "linear-gradient(145deg, #000, #1a1a1a, #000)",
+            color: "#00ff41",
+            padding: "1rem 1.5rem",
+            borderRadius: "0px",
+            textAlign: "left",
+            fontSize: "0.8rem",
+            fontFamily: "monospace",
+            border: "2px solid #00ff41",
+            boxShadow:
+              "0 0 20px rgba(0, 255, 65, 0.3), inset 0 0 10px rgba(0, 255, 65, 0.1)",
+            animation:
+              "terminalGlow 2s ease-in-out infinite alternate, fadeIn 0.5s ease-in-out",
+            textShadow: "0 0 8px #00ff41",
+            minWidth: "280px",
           }}
         >
-          ⚠️ Something is coming...
+          {/* Terminal header */}
+          <div
+            style={{
+              borderBottom: "1px solid #00ff41",
+              paddingBottom: "0.5rem",
+              marginBottom: "0.8rem",
+              fontSize: "0.7rem",
+              opacity: 0.8,
+            }}
+          >
+            SYSTEM_ALERT.EXE - [ACTIVE]
+          </div>
+
+          {/* Warning content */}
+          <div style={{ lineHeight: "1.4" }}>
+            <div style={{ marginBottom: "0.5rem" }}>
+              &gt; DEVELOPER_DETECTED...
+            </div>
+            <div style={{ marginBottom: "0.5rem", color: "#ffff00" }}>
+              &gt; NAME: REDI
+            </div>
+            <div style={{ marginBottom: "0.5rem" }}>
+              &gt; STATUS: PASSIONATE_CODER
+            </div>
+            <div
+              style={{
+                marginBottom: "0.8rem",
+                fontSize: "0.7rem",
+                opacity: 0.8,
+              }}
+            >
+              &gt; LOVES: CREATING_AMAZING_CODE
+            </div>
+            <div
+              style={{
+                fontSize: "0.7rem",
+                opacity: 0.6,
+                fontStyle: "italic",
+                textAlign: "center",
+                animation: "blink 1.5s infinite",
+              }}
+            >
+              [INITIALIZING_PORTFOLIO...]
+            </div>
+          </div>
+
+          {/* Scanlines effect */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              background:
+                "repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,255,65,0.05) 2px, rgba(0,255,65,0.05) 4px)",
+              pointerEvents: "none",
+            }}
+          />
         </div>
       )}
 
@@ -394,6 +566,8 @@ export default function App() {
         visible={showIntroOverlay}
         onDismiss={handleIntroOverlayDismiss}
         flashy={true}
+        title="⚠️ SYSTEM ACCESS GRANTED"
+        message="Welcome to REDI's retro development studio. Navigate carefully through this interactive experience to discover my coding journey and projects."
       />
 
       {/* Bottom retro message */}
@@ -428,43 +602,54 @@ export default function App() {
 
       {/* Play button on monitor screen */}
       {showMonitorGuidance && !gameCompleted && (
-        <button
+        <div
           style={{
             position: "fixed",
-            top: "52%", // A bit more down
-            left: "57%", // More to the right
+            top: "52%",
+            left: "57%",
             transform: "translate(-50%, -50%)",
             zIndex: 12,
-            background: "#000",
-            color: "#0f0",
-            border: "2px solid #0f0",
-            padding: "0.8rem 1.5rem",
-            borderRadius: "8px",
-            fontSize: "1rem",
-            fontWeight: "bold",
-            cursor: "pointer",
+            background: "transparent",
+            border: "none",
+            padding: "1rem",
             fontFamily: "monospace",
-            boxShadow: "0 0 10px rgba(0, 255, 0, 0.3)",
-            transition: "all 0.2s",
-          }}
-          onMouseOver={(e) => {
-            audioManager.playSound('hover'); // Play hover sound
-            e.target.style.background = "#0f0";
-            e.target.style.color = "#000";
-            e.target.style.boxShadow = "0 0 15px rgba(0, 255, 0, 0.6)";
-          }}
-          onMouseOut={(e) => {
-            e.target.style.background = "#000";
-            e.target.style.color = "#0f0";
-            e.target.style.boxShadow = "0 0 10px rgba(0, 255, 0, 0.3)";
+            cursor: "pointer",
+            transition: "all 0.2s ease",
+            textAlign: "center",
           }}
           onClick={() => {
-            audioManager.playSound('click'); // Play click sound
+            audioManager.playSound("click");
             setShowSnakeGame(true);
           }}
+          onMouseOver={(e) => {
+            audioManager.playSound("hover");
+            e.target.style.opacity = "0.8";
+          }}
+          onMouseOut={(e) => {
+            e.target.style.opacity = "1";
+          }}
         >
-          🐍 PLAY SNAKE
-        </button>
+          <div
+            style={{
+              color: "#333",
+              fontSize: "1.2rem",
+              fontWeight: "bold",
+              textShadow: "1px 1px 2px rgba(0,0,0,0.3)",
+              marginBottom: "0.3rem",
+            }}
+          >
+            🐍 PLAY SNAKE
+          </div>
+          <div
+            style={{
+              color: "#666",
+              fontSize: "0.8rem",
+              fontStyle: "italic",
+            }}
+          >
+            Click to start
+          </div>
+        </div>
       )}
 
       {/* Progress indicator */}
@@ -490,15 +675,38 @@ export default function App() {
       {showRetroMenu && (
         <RetroMenu
           visible={showRetroMenu}
-          onClose={() => setShowRetroMenu(false)}
+          onClose={() => {
+            setShowRetroMenu(false);
+            setGameCompleted(false);
+            setShowMonitorGuidance(false);
+            setShowIntroOverlay(false);
+            setShowSubtleWarning(false);
+            setStage(0); // Reset to stage 0
+          }}
         />
       )}
+
+      {/* Matrix Cursor Effect */}
+      <MatrixCursor />
+
+      {/* Scroll Indicator - appears on initial load */}
+      <ScrollIndicator />
 
       {/* CSS for animations */}
       <style>{`
         @keyframes fadeIn {
           from { opacity: 0; transform: translateY(-10px); }
           to { opacity: 0.8; transform: translateY(0); }
+        }
+        
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0.3; }
+        }
+        
+        @keyframes terminalGlow {
+          0% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.3), inset 0 0 10px rgba(0, 255, 65, 0.1); }
+          100% { box-shadow: 0 0 30px rgba(0, 255, 65, 0.5), inset 0 0 15px rgba(0, 255, 65, 0.2); }
         }
       `}</style>
     </>
