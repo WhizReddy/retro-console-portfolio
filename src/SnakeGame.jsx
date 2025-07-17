@@ -3,9 +3,13 @@ import audioManager from './AudioManager';
 
 const GRID_SIZE = 20;
 const CANVAS_SIZE = 400; // Back to square dimensions
-const INITIAL_SNAKE = [{ x: 10, y: 10 }];
+const INITIAL_SNAKE = [
+  { x: 10, y: 10 }, // Head
+  { x: 10, y: 11 }, // Body segment 1
+  { x: 10, y: 12 }  // Body segment 2 (tail)
+];
 const INITIAL_DIRECTION = { x: 0, y: -1 };
-const GAME_SPEED = 150;
+const GAME_SPEED = 120; // Slightly faster for better gameplay
 
 function generateFood(snake) {
   let food;
@@ -121,26 +125,51 @@ export default function SnakeGame({ onComplete, onClose }) {
       ctx.stroke();
     }
 
-    // Draw snake
-    ctx.fillStyle = '#0f0';
+    // Draw snake with better visuals
     snake.forEach((segment, index) => {
-      ctx.fillRect(
-        segment.x * cellSize + 1,
-        segment.y * cellSize + 1,
-        cellSize - 2,
-        cellSize - 2
-      );
-      
-      // Snake head highlight
       if (index === 0) {
-        ctx.fillStyle = '#0a0';
+        // Snake head - brighter green with glow effect
+        ctx.fillStyle = '#0f0';
+        ctx.shadowColor = '#0f0';
+        ctx.shadowBlur = 10;
+        ctx.fillRect(
+          segment.x * cellSize + 1,
+          segment.y * cellSize + 1,
+          cellSize - 2,
+          cellSize - 2
+        );
+        
+        // Head highlight
+        ctx.fillStyle = '#5f5';
+        ctx.shadowBlur = 5;
         ctx.fillRect(
           segment.x * cellSize + 3,
           segment.y * cellSize + 3,
           cellSize - 6,
           cellSize - 6
         );
-        ctx.fillStyle = '#0f0';
+        
+        // Reset shadow
+        ctx.shadowBlur = 0;
+      } else {
+        // Snake body - gradient effect based on position
+        const opacity = 1 - (index * 0.1); // Fade towards tail
+        ctx.fillStyle = `rgba(0, 255, 0, ${Math.max(0.6, opacity)})`;
+        ctx.fillRect(
+          segment.x * cellSize + 1,
+          segment.y * cellSize + 1,
+          cellSize - 2,
+          cellSize - 2
+        );
+        
+        // Body inner highlight
+        ctx.fillStyle = `rgba(85, 255, 85, ${Math.max(0.3, opacity * 0.5)})`;
+        ctx.fillRect(
+          segment.x * cellSize + 4,
+          segment.y * cellSize + 4,
+          cellSize - 8,
+          cellSize - 8
+        );
       }
     });
 

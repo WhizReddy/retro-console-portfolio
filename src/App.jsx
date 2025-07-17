@@ -21,11 +21,12 @@ import DeskProbe from "./DeskProbe";
 import ScrollIntroManager from "../components/ScrollIntroManager";
 import IntroOverlay from "../components/IntroOverlay";
 import MonitorGuidance from "../components/MonitorGuidance";
-import ScrollProgressIndicator from "../components/ScrollProgressIndicator";
+
 import SnakeGame from "./SnakeGame";
 import RetroMenu from "./RetroMenu";
 import RainEffect from "./RainEffect";
 import MatrixCursor from "./MatrixCursor";
+import MatrixCorners from "./MatrixCorners";
 import ScrollIndicator from "../components/ScrollIndicator";
 import GameIndicator from "../components/GameIndicator";
 import audioManager from "./AudioManager";
@@ -193,6 +194,8 @@ export default function App() {
       if (now - lastStageChange < stageCooldown) {
         return;
       }
+
+
 
       wheelAccumulator += e.deltaY;
 
@@ -652,12 +655,7 @@ export default function App() {
         </div>
       )}
 
-      {/* Progress indicator */}
-      <ScrollProgressIndicator
-        currentStage={stage}
-        totalStages={4}
-        stageNames={["Start", "Warning", "Intro", "Monitor"]}
-      />
+
 
       {/* Snake Game */}
       {showSnakeGame && (
@@ -689,8 +687,13 @@ export default function App() {
       {/* Matrix Cursor Effect */}
       <MatrixCursor />
 
+      {/* Matrix Corner Effects - persistent subtle animation */}
+      <MatrixCorners />
+
       {/* Scroll Indicator - appears on initial load */}
       <ScrollIndicator />
+
+
 
       {/* CSS for animations */}
       <style>{`
@@ -708,6 +711,8 @@ export default function App() {
           0% { box-shadow: 0 0 20px rgba(0, 255, 65, 0.3), inset 0 0 10px rgba(0, 255, 65, 0.1); }
           100% { box-shadow: 0 0 30px rgba(0, 255, 65, 0.5), inset 0 0 15px rgba(0, 255, 65, 0.2); }
         }
+        
+
       `}</style>
     </>
   );
