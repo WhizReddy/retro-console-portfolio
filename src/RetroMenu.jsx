@@ -14,6 +14,7 @@ const MENU_ITEMS = [
         "🎨 Combining technical skills with creative vision",
         "🚀 Always exploring new technologies and pushing boundaries",
         "🎮 Love for retro aesthetics and interactive design",
+        "🔗 GitHub: https://github.com/WhizReddy"
       ],
     },
   },
